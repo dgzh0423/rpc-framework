@@ -25,8 +25,10 @@ public class ProviderExample {
         // 本地注册服务
         LocalRegistry.register(serviceName, UserServiceImpl.class);
 
-        // 注册服务到服务中心
+        //获取RPC框架配置
         RpcConfig rpcConfig = RpcApplication.getRpcConfig();
+
+        // 注册服务到服务中心
         RegistryConfig registryConfig = rpcConfig.getRegistryConfig();
         Registry registry = RegistryFactory.getInstance(registryConfig.getRegistry());
         ServiceMetaInfo serviceMetaInfo = new ServiceMetaInfo();

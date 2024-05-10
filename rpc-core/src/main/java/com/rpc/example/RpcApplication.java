@@ -5,6 +5,8 @@ import com.rpc.example.config.RpcConfig;
 import com.rpc.example.constant.RpcConstant;
 import com.rpc.example.registry.Registry;
 import com.rpc.example.registry.RegistryFactory;
+import com.rpc.example.serializer.Serializer;
+import com.rpc.example.serializer.SerializerFactory;
 import com.rpc.example.utils.ConfigUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,13 +31,19 @@ public class RpcApplication {
         rpcConfig = newRpcConfig;
         log.info("rpc init, config = {}", newRpcConfig.toString());
 
+        // 加载序列化器
+        String serializerKey = rpcConfig.getSerializer();
+        Serializer serializer = SerializerFactory.getInstance(serializerKey);
+        log.info("serializer init, type = {}", serializer);
+
         // 注册中心初始化
         RegistryConfig registryConfig = rpcConfig.getRegistryConfig();
         Registry registry = RegistryFactory.getInstance(registryConfig.getRegistry());
         registry.init(registryConfig);
         log.info("registry init, config = {}", registryConfig);
-        // 创建并注册 Shutdown Hook，JVM 退出时执行操作
-        //Runtime.getRuntime().addShutdownHook(new Thread(registry::destroy));
+
+        // 创建并注册 Shutdown Hook，JVM 正常退出时会执行注册中心的destroy操作
+        Runtime.getRuntime().addShutdownHook(new Thread(registry::destroy));
     }
 
     /**
