@@ -166,7 +166,7 @@ public class EtcdRegistry implements Registry{
     @Override
     public void watch(String serviceNodeKey) {
         Watch watchClient = client.getWatchClient();
-        // 之前未被监听，开启监听
+        // 之前未被监听，开启监听(只监听首次加入到watchingKeySet中的key)
         boolean newWatch = watchingKeySet.add(serviceNodeKey);
         if (newWatch) {
             watchClient.watch(ByteSequence.from(serviceNodeKey, StandardCharsets.UTF_8), response -> {
@@ -178,6 +178,7 @@ public class EtcdRegistry implements Registry{
                             registryServiceCache.clearCache();
                             break;
                         case PUT:
+                            // 即使key被注册中心删除了再重新设置，之前的监听依然有效
                         default:
                             break;
                     }
@@ -199,7 +200,7 @@ public class EtcdRegistry implements Registry{
             }
         }
 
-        //清除本地保存的注册信息
+        //清除服务端保存的注册信息
         localRegisterNodeKeySet.clear();
 
         // 释放资源

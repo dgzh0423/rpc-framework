@@ -39,7 +39,7 @@ public class ServiceMetaInfo {
     /**
      * 获取服务键名
      *
-     * @return 服务键名
+     * @return 服务键名 如："com.rpc.example.common.service.UserService:1.0"
      */
     public String getServiceKey() {
         // 后续可扩展服务分组
@@ -50,16 +50,16 @@ public class ServiceMetaInfo {
     /**
      * 获取服务注册节点键名
      *
-     * @return 服务注册节点键名
+     * @return 服务注册节点键名 如 "com.rpc.example.common.service.UserService:1.0/localhost:8081"
      */
     public String getServiceNodeKey() {
         return String.format("%s/%s:%s", getServiceKey(), serviceHost, servicePort);
     }
 
     /**
-     * 获取完整服务地址
+     * 获取服务方地址
      *
-     * @return 完整服务地址
+     * @return 服务方地址 如："http://localhost:8080"
      */
     public String getServiceAddress() {
         if (!StrUtil.contains(serviceHost, "http")) {
