@@ -1,6 +1,8 @@
 package com.rpc.example.spi;
 
 import cn.hutool.core.io.resource.ResourceUtil;
+import com.rpc.example.registry.EtcdRegistry;
+import com.rpc.example.registry.Registry;
 import com.rpc.example.serializer.Serializer;
 import lombok.extern.slf4j.Slf4j;
 import java.io.BufferedReader;
@@ -50,7 +52,7 @@ public class SpiLoader {
     /**
      * 动态加载的类列表
      */
-    private static final List<Class<?>> LOAD_CLASS_LIST = Arrays.asList(Serializer.class);
+    private static final List<Class<?>> LOAD_CLASS_LIST = Arrays.asList(Serializer.class, Registry.class);
 
     /**
      * 加载所有类型
@@ -134,7 +136,9 @@ public class SpiLoader {
         loadAll();
         System.out.println(loaderMap);
         Serializer serializer = getInstance(Serializer.class, "kryo");
+        EtcdRegistry etcd = getInstance(Registry.class, "etcd");
         System.out.println(serializer);
+        System.out.println(etcd);
         System.out.println(instanceCache);
     }
 
