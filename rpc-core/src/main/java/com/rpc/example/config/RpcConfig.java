@@ -4,7 +4,7 @@ import com.rpc.example.serializer.SerializerKeys;
 import lombok.Data;
 
 /**
- * RPC 框架配置
+ * RPC 默认框架配置
  * @author 15304
  */
 @Data

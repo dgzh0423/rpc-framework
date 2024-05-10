@@ -1,16 +1,23 @@
 package com.rpc.example.proxy;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import com.rpc.example.RpcApplication;
+import com.rpc.example.config.RpcConfig;
+import com.rpc.example.constant.RpcConstant;
 import com.rpc.example.model.RpcRequest;
 import com.rpc.example.model.RpcResponse;
+import com.rpc.example.model.ServiceMetaInfo;
+import com.rpc.example.registry.Registry;
+import com.rpc.example.registry.RegistryFactory;
 import com.rpc.example.serializer.Serializer;
 import com.rpc.example.serializer.SerializerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * jdk动态代理（代替调用方来对服务接口进行调用）
@@ -27,8 +34,9 @@ public class ServiceProxy implements InvocationHandler {
         final Serializer serializer = SerializerFactory.getInstance(RpcApplication.getRpcConfig().getSerializer());
 
         // 构造请求
+        String serviceName = method.getDeclaringClass().getName();
         RpcRequest rpcRequest = RpcRequest.builder()
-                .serviceName(method.getDeclaringClass().getName())
+                .serviceName(serviceName)
                 .methodName(method.getName())
                 .parameterTypes(method.getParameterTypes())
                 .args(args)
@@ -36,9 +44,24 @@ public class ServiceProxy implements InvocationHandler {
         try {
             // 序列化
             byte[] bodyBytes = serializer.serialize(rpcRequest);
+
+            // 根据rpc配置文件中配置的注册中心来选择特定类型的注册中心（ETCD，ZooKeeper。。。），类似选择不同类型的序列化器
+            RpcConfig rpcConfig = RpcApplication.getRpcConfig();
+            Registry registry = RegistryFactory.getInstance(rpcConfig.getRegistryConfig().getRegistry());
+            ServiceMetaInfo serviceMetaInfo = new ServiceMetaInfo();
+            serviceMetaInfo.setServiceName(serviceName);
+            serviceMetaInfo.setServiceVersion(RpcConstant.DEFAULT_SERVICE_VERSION);
+            // 从注册中心获取服务节点地址（服务可能分布在不同服务器上）
+            List<ServiceMetaInfo> serviceMetaInfoList = registry.serviceDiscovery(serviceMetaInfo.getServiceKey());
+            if (CollUtil.isEmpty(serviceMetaInfoList)) {
+                throw new RuntimeException("暂无服务地址");
+            }
+            // todo 测试先使用第一个服务节点地址，应该使用负载均衡算法来选择实际要请求的服务节点地址
+            ServiceMetaInfo selectedServiceMetaInfo = serviceMetaInfoList.get(0);
+
             // 发送请求
             // todo 注意，这里地址是写死的，需要使用注册中心和服务发现机制解决）
-            try (HttpResponse httpResponse = HttpRequest.post("http://localhost:8081")
+            try (HttpResponse httpResponse = HttpRequest.post(selectedServiceMetaInfo.getServiceAddress())
                     .body(bodyBytes)
                     .execute()) {
                 byte[] result = httpResponse.bodyBytes();

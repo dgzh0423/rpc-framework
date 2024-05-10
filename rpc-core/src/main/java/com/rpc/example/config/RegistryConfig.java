@@ -4,7 +4,7 @@ import com.rpc.example.registry.RegistryKeys;
 import lombok.Data;
 
 /**
- * 注册中心配置信息
+ * 注册中心默认配置信息
  * @author 15304
  */
 @Data
