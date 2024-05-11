@@ -3,6 +3,7 @@ package com.rpc.example.spi;
 import cn.hutool.core.io.resource.ResourceUtil;
 import com.rpc.example.registry.EtcdRegistry;
 import com.rpc.example.registry.Registry;
+import com.rpc.example.registry.ZooKeeperRegistry;
 import com.rpc.example.serializer.Serializer;
 import lombok.extern.slf4j.Slf4j;
 import java.io.BufferedReader;
@@ -135,9 +136,9 @@ public class SpiLoader {
         loadAll();
         System.out.println(loaderMap);
         Serializer serializer = getInstance(Serializer.class, "protobuf");
-        EtcdRegistry etcd = getInstance(Registry.class, "etcd");
+        ZooKeeperRegistry zookeeper = getInstance(Registry.class, "zookeeper");
         System.out.println(serializer);
-        System.out.println(etcd);
+        System.out.println(zookeeper);
         System.out.println(instanceCache);
     }
 
