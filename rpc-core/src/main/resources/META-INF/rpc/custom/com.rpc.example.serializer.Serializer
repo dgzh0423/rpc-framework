@@ -2,3 +2,4 @@ jdk=com.rpc.example.serializer.JdkSerializer
 hessian=com.rpc.example.serializer.HessianSerializer
 json=com.rpc.example.serializer.JsonSerializer
 kryo=com.rpc.example.serializer.KryoSerializer
+protobuf=com.rpc.example.serializer.ProtostuffSerializer

@@ -6,7 +6,6 @@ import com.rpc.example.registry.Registry;
 import com.rpc.example.serializer.Serializer;
 import lombok.extern.slf4j.Slf4j;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Arrays;
@@ -132,10 +131,10 @@ public class SpiLoader {
         return keyClassMap;
     }
 
-    public static void main(String[] args) throws IOException, ClassNotFoundException {
+    public static void main(String[] args) {
         loadAll();
         System.out.println(loaderMap);
-        Serializer serializer = getInstance(Serializer.class, "kryo");
+        Serializer serializer = getInstance(Serializer.class, "protobuf");
         EtcdRegistry etcd = getInstance(Registry.class, "etcd");
         System.out.println(serializer);
         System.out.println(etcd);
