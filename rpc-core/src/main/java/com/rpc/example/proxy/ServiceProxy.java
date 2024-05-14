@@ -1,8 +1,6 @@
 package com.rpc.example.proxy;
 
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.http.HttpRequest;
-import cn.hutool.http.HttpResponse;
 import com.rpc.example.RpcApplication;
 import com.rpc.example.config.RpcConfig;
 import com.rpc.example.constant.RpcConstant;
@@ -13,8 +11,8 @@ import com.rpc.example.registry.Registry;
 import com.rpc.example.registry.RegistryFactory;
 import com.rpc.example.serializer.Serializer;
 import com.rpc.example.serializer.SerializerFactory;
+import com.rpc.example.server.tcp.VertxTcpClient;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -28,7 +26,7 @@ import java.util.List;
 public class ServiceProxy implements InvocationHandler {
 
     @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    public Object invoke(Object proxy, Method method, Object[] args) {
 
         // 指定序列化器
         final Serializer serializer = SerializerFactory.getInstance(RpcApplication.getRpcConfig().getSerializer());
@@ -43,7 +41,7 @@ public class ServiceProxy implements InvocationHandler {
                 .build();
         try {
             // 序列化
-            byte[] bodyBytes = serializer.serialize(rpcRequest);
+            // byte[] bodyBytes = serializer.serialize(rpcRequest);
 
             // 根据rpc配置文件中配置的注册中心来选择特定类型的注册中心（ETCD，ZooKeeper。。。），类似选择不同类型的序列化器
             RpcConfig rpcConfig = RpcApplication.getRpcConfig();
@@ -59,20 +57,23 @@ public class ServiceProxy implements InvocationHandler {
             // todo 测试先使用第一个服务节点地址，应该使用负载均衡算法来选择实际要请求的服务节点地址
             ServiceMetaInfo selectedServiceMetaInfo = serviceMetaInfoList.get(0);
 
-            // 发送请求
+            // 发送HTTP请求
             // todo 这里服务地址，需要使用注册中心和服务发现机制解决
-            try (HttpResponse httpResponse = HttpRequest.post(selectedServiceMetaInfo.getServiceAddress())
-                    .body(bodyBytes)
-                    .execute()) {
-                byte[] result = httpResponse.bodyBytes();
-                // 将收到的请求响应（com.rpc.example.server.HttpServerHandler.doResponse）反序列化
-                RpcResponse rpcResponse = serializer.deserialize(result, RpcResponse.class);
-                return rpcResponse.getData();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+            //try (HttpResponse httpResponse = HttpRequest.post(selectedServiceMetaInfo.getServiceAddress())
+            //        .body(bodyBytes)
+            //        .execute()) {
+            //    byte[] result = httpResponse.bodyBytes();
+            //    RpcResponse rpcResponse = serializer.deserialize(result, RpcResponse.class);
+            //    return rpcResponse.getData();
+            //}
+
+            // 发送TCP请求
+            RpcResponse rpcResponse = VertxTcpClient.doRequest(rpcRequest, selectedServiceMetaInfo);
+            return rpcResponse.getData();
+
+        } catch (Exception e) {
+            throw new RuntimeException("调用失败");
         }
 
-        return null;
     }
 }

@@ -1,7 +1,6 @@
 package com.rpc.example.spi;
 
 import cn.hutool.core.io.resource.ResourceUtil;
-import com.rpc.example.registry.EtcdRegistry;
 import com.rpc.example.registry.Registry;
 import com.rpc.example.registry.ZooKeeperRegistry;
 import com.rpc.example.serializer.Serializer;
@@ -27,12 +26,12 @@ public class SpiLoader {
     /**
      * 存储已加载的类：接口名 =>（key => 实现类）
      */
-    private static final Map<String, Map<String, Class<?>>> loaderMap = new ConcurrentHashMap<>();
+    private static final Map<String, Map<String, Class<?>>> LOADER_MAP = new ConcurrentHashMap<>();
 
     /**
      * 对象实例缓存（避免重复 new），类路径 => 对象实例，单例模式
      */
-    private static final Map<String, Object> instanceCache = new ConcurrentHashMap<>();
+    private static final Map<String, Object> INSTANCE_CACHE = new ConcurrentHashMap<>();
 
     /**
      * 系统 SPI 目录
@@ -75,7 +74,7 @@ public class SpiLoader {
     @SuppressWarnings("unchecked")
     public static <T> T getInstance(Class<?> tClass, String key) {
         String tClassName = tClass.getName();
-        Map<String, Class<?>> keyClassMap = loaderMap.get(tClassName);
+        Map<String, Class<?>> keyClassMap = LOADER_MAP.get(tClassName);
         if (keyClassMap == null) {
             throw new RuntimeException(String.format("SpiLoader 未加载 %s 类型", tClassName));
         }
@@ -86,15 +85,15 @@ public class SpiLoader {
         Class<?> implClass = keyClassMap.get(key);
         // 从实例缓存中加载指定类型的实例
         String implClassName = implClass.getName();
-        if (!instanceCache.containsKey(implClassName)) {
+        if (!INSTANCE_CACHE.containsKey(implClassName)) {
             try {
-                instanceCache.put(implClassName, implClass.newInstance());
+                INSTANCE_CACHE.put(implClassName, implClass.newInstance());
             } catch (InstantiationException | IllegalAccessException e) {
                 String errorMsg = String.format("%s 类实例化失败", implClassName);
                 throw new RuntimeException(errorMsg, e);
             }
         }
-        return (T) instanceCache.get(implClassName);
+        return (T) INSTANCE_CACHE.get(implClassName);
     }
 
     /**
@@ -128,18 +127,18 @@ public class SpiLoader {
                 }
             }
         }
-        loaderMap.put(loadClass.getName(), keyClassMap);
+        LOADER_MAP.put(loadClass.getName(), keyClassMap);
         return keyClassMap;
     }
 
     public static void main(String[] args) {
         loadAll();
-        System.out.println(loaderMap);
+        System.out.println(LOADER_MAP);
         Serializer serializer = getInstance(Serializer.class, "protobuf");
         ZooKeeperRegistry zookeeper = getInstance(Registry.class, "zookeeper");
         System.out.println(serializer);
         System.out.println(zookeeper);
-        System.out.println(instanceCache);
+        System.out.println(INSTANCE_CACHE);
     }
 
 }
