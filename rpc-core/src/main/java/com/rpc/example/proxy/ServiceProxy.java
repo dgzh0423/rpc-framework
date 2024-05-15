@@ -9,8 +9,6 @@ import com.rpc.example.model.RpcResponse;
 import com.rpc.example.model.ServiceMetaInfo;
 import com.rpc.example.registry.Registry;
 import com.rpc.example.registry.RegistryFactory;
-import com.rpc.example.serializer.Serializer;
-import com.rpc.example.serializer.SerializerFactory;
 import com.rpc.example.server.tcp.VertxTcpClient;
 
 import java.lang.reflect.InvocationHandler;
@@ -29,7 +27,7 @@ public class ServiceProxy implements InvocationHandler {
     public Object invoke(Object proxy, Method method, Object[] args) {
 
         // 指定序列化器
-        final Serializer serializer = SerializerFactory.getInstance(RpcApplication.getRpcConfig().getSerializer());
+        // final Serializer serializer = SerializerFactory.getInstance(RpcApplication.getRpcConfig().getSerializer());
 
         // 构造请求
         String serviceName = method.getDeclaringClass().getName();
