@@ -53,7 +53,7 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
 
     /**
      * Hash 算法，考虑了null值和优化性能的实现
-     *
+     * todo 如何实现根据请求方IP地址的hash值，保证相同IP的请求会发送到同一个服务节点
      * @param key 传入的对象
      * @return hash值
      */
