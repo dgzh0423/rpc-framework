@@ -4,6 +4,8 @@ import cn.hutool.core.collection.CollUtil;
 import com.rpc.example.RpcApplication;
 import com.rpc.example.config.RpcConfig;
 import com.rpc.example.constant.RpcConstant;
+import com.rpc.example.loadbalancer.LoadBalancer;
+import com.rpc.example.loadbalancer.LoadBalancerFactory;
 import com.rpc.example.model.RpcRequest;
 import com.rpc.example.model.RpcResponse;
 import com.rpc.example.model.ServiceMetaInfo;
@@ -13,7 +15,9 @@ import com.rpc.example.server.tcp.VertxTcpClient;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * jdk动态代理（代替调用方来对服务接口进行调用）
@@ -52,11 +56,14 @@ public class ServiceProxy implements InvocationHandler {
             if (CollUtil.isEmpty(serviceMetaInfoList)) {
                 throw new RuntimeException("暂无服务地址");
             }
-            // todo 测试先使用第一个服务节点地址，应该使用负载均衡算法来选择实际要请求的服务节点地址
-            ServiceMetaInfo selectedServiceMetaInfo = serviceMetaInfoList.get(0);
+
+            // 使用特定负载均衡算法来选择实际要请求的服务节点地址，默认随机
+            LoadBalancer loadBalancer = LoadBalancerFactory.getInstance(rpcConfig.getLoadBalancer());
+            Map<String, Object> requestParams = new HashMap<>();
+            requestParams.put("methodName", rpcRequest.getMethodName());
+            ServiceMetaInfo selectedServiceMetaInfo = loadBalancer.select(requestParams, serviceMetaInfoList);
 
             // 发送HTTP请求
-            // todo 这里服务地址，需要使用注册中心和服务发现机制解决
             //try (HttpResponse httpResponse = HttpRequest.post(selectedServiceMetaInfo.getServiceAddress())
             //        .body(bodyBytes)
             //        .execute()) {
