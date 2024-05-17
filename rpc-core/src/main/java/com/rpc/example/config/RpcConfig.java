@@ -1,5 +1,6 @@
 package com.rpc.example.config;
 
+import com.rpc.example.fault.retry.RetryStrategyKeys;
 import com.rpc.example.loadbalancer.LoadBalancerKeys;
 import com.rpc.example.serializer.SerializerKeys;
 import lombok.Data;
@@ -50,4 +51,9 @@ public class RpcConfig {
      * 负载均衡器
      */
     private String loadBalancer = LoadBalancerKeys.RANDOM;
+
+    /**
+     * 重试策略
+     */
+    private String retryStrategy = RetryStrategyKeys.FIXED_INTERVAL;
 }

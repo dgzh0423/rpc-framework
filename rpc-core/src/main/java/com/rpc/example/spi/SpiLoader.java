@@ -1,6 +1,10 @@
 package com.rpc.example.spi;
 
 import cn.hutool.core.io.resource.ResourceUtil;
+import com.rpc.example.fault.retry.FixedIntervalRetryStrategy;
+import com.rpc.example.fault.retry.RetryStrategy;
+import com.rpc.example.loadbalancer.LoadBalancer;
+import com.rpc.example.loadbalancer.RoundRobinLoadBalancer;
 import com.rpc.example.registry.Registry;
 import com.rpc.example.registry.ZooKeeperRegistry;
 import com.rpc.example.serializer.Serializer;
@@ -51,7 +55,7 @@ public class SpiLoader {
     /**
      * 动态加载的类列表
      */
-    private static final List<Class<?>> LOAD_CLASS_LIST = Arrays.asList(Serializer.class, Registry.class);
+    private static final List<Class<?>> LOAD_CLASS_LIST = Arrays.asList(Serializer.class, Registry.class, LoadBalancer.class, RetryStrategy.class);
 
     /**
      * 加载所有类型
@@ -133,12 +137,16 @@ public class SpiLoader {
 
     public static void main(String[] args) {
         loadAll();
-        System.out.println(LOADER_MAP);
+        System.out.println("LOADER_MAP: " + LOADER_MAP);
         Serializer serializer = getInstance(Serializer.class, "protobuf");
-        ZooKeeperRegistry zookeeper = getInstance(Registry.class, "zookeeper");
         System.out.println(serializer);
+        ZooKeeperRegistry zookeeper = getInstance(Registry.class, "zookeeper");
         System.out.println(zookeeper);
-        System.out.println(INSTANCE_CACHE);
+        RoundRobinLoadBalancer roundRobinLoadBalancer = getInstance(LoadBalancer.class, "roundRobin");
+        System.out.println(roundRobinLoadBalancer);
+        FixedIntervalRetryStrategy fixedIntervalRetryStrategy = getInstance(RetryStrategy.class, "fixedInterval");
+        System.out.println(fixedIntervalRetryStrategy);
+        System.out.println("INSTANCE_CACHE: " + INSTANCE_CACHE);
     }
 
 }
