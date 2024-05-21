@@ -4,8 +4,11 @@ import cn.hutool.core.collection.CollUtil;
 import com.rpc.example.RpcApplication;
 import com.rpc.example.config.RpcConfig;
 import com.rpc.example.constant.RpcConstant;
+import com.rpc.example.constant.TolerantStrategyConstant;
 import com.rpc.example.fault.retry.RetryStrategy;
 import com.rpc.example.fault.retry.RetryStrategyFactory;
+import com.rpc.example.fault.tolerant.TolerantStrategy;
+import com.rpc.example.fault.tolerant.TolerantStrategyFactory;
 import com.rpc.example.loadbalancer.LoadBalancer;
 import com.rpc.example.loadbalancer.LoadBalancerFactory;
 import com.rpc.example.model.RpcRequest;
@@ -43,45 +46,57 @@ public class ServiceProxy implements InvocationHandler {
                 .parameterTypes(method.getParameterTypes())
                 .args(args)
                 .build();
-        try {
-            // 序列化
-            // byte[] bodyBytes = serializer.serialize(rpcRequest);
+        // 序列化
+        // byte[] bodyBytes = serializer.serialize(rpcRequest);
 
-            // 根据rpc配置文件中配置的注册中心来选择特定类型的注册中心（ETCD，ZooKeeper。。。），类似选择不同类型的序列化器
-            RpcConfig rpcConfig = RpcApplication.getRpcConfig();
-            Registry registry = RegistryFactory.getInstance(rpcConfig.getRegistryConfig().getRegistry());
-            ServiceMetaInfo serviceMetaInfo = new ServiceMetaInfo();
-            serviceMetaInfo.setServiceName(serviceName);
-            serviceMetaInfo.setServiceVersion(RpcConstant.DEFAULT_SERVICE_VERSION);
-            // 从注册中心获取服务节点地址（服务可能分布在不同服务器上）
-            List<ServiceMetaInfo> serviceMetaInfoList = registry.serviceDiscovery(serviceMetaInfo.getServiceKey());
-            if (CollUtil.isEmpty(serviceMetaInfoList)) {
-                throw new RuntimeException("暂无服务地址");
-            }
+        // 获取RPC框架的全局配置
+        RpcConfig rpcConfig = RpcApplication.getRpcConfig();
+        System.out.println("rpcConfig:" + rpcConfig);
 
-            // 使用特定负载均衡算法来选择实际要请求的服务节点地址，默认随机
-            LoadBalancer loadBalancer = LoadBalancerFactory.getInstance(rpcConfig.getLoadBalancer());
-            Map<String, Object> requestParams = new HashMap<>();
-            requestParams.put("methodName", rpcRequest.getMethodName());
-            ServiceMetaInfo selectedServiceMetaInfo = loadBalancer.select(requestParams, serviceMetaInfoList);
-
-            // 发送HTTP请求
-            //try (HttpResponse httpResponse = HttpRequest.post(selectedServiceMetaInfo.getServiceAddress())
-            //        .body(bodyBytes)
-            //        .execute()) {
-            //    byte[] result = httpResponse.bodyBytes();
-            //    RpcResponse rpcResponse = serializer.deserialize(result, RpcResponse.class);
-            //    return rpcResponse.getData();
-            //}
-
-            // 发送TCP请求, with重试机制
-            RetryStrategy retryStrategy = RetryStrategyFactory.getInstance(rpcConfig.getRetryStrategy());
-            RpcResponse rpcResponse = retryStrategy.doRetry(() -> VertxTcpClient.doRequest(rpcRequest, selectedServiceMetaInfo));
-            return rpcResponse.getData();
-
-        } catch (Exception e) {
-            throw new RuntimeException("调用失败");
+        // 根据rpc配置文件中配置的注册中心来选择特定类型的注册中心（ETCD，ZooKeeper。。。），类似选择不同类型的序列化器
+        Registry registry = RegistryFactory.getInstance(rpcConfig.getRegistryConfig().getRegistry());
+        ServiceMetaInfo serviceMetaInfo = new ServiceMetaInfo();
+        serviceMetaInfo.setServiceName(serviceName);
+        serviceMetaInfo.setServiceVersion(RpcConstant.DEFAULT_SERVICE_VERSION);
+        // 从注册中心获取服务节点地址（服务可能分布在不同服务器上）
+        List<ServiceMetaInfo> serviceMetaInfoList = registry.serviceDiscovery(serviceMetaInfo.getServiceKey());
+        if (CollUtil.isEmpty(serviceMetaInfoList)) {
+            throw new RuntimeException("暂无服务地址");
         }
+
+        // 使用特定负载均衡算法来选择实际要请求的服务节点地址，默认随机
+        LoadBalancer loadBalancer = LoadBalancerFactory.getInstance(rpcConfig.getLoadBalancer());
+        Map<String, Object> requestParams = new HashMap<>();
+        requestParams.put("methodName", rpcRequest.getMethodName());
+        ServiceMetaInfo selectedServiceMetaInfo = loadBalancer.select(requestParams, serviceMetaInfoList);
+
+        // 发送HTTP请求
+        //try (HttpResponse httpResponse = HttpRequest.post(selectedServiceMetaInfo.getServiceAddress())
+        //        .body(bodyBytes)
+        //        .execute()) {
+        //    byte[] result = httpResponse.bodyBytes();
+        //    RpcResponse rpcResponse = serializer.deserialize(result, RpcResponse.class);
+        //    return rpcResponse.getData();
+        //}
+
+        // 发送TCP请求
+        RpcResponse rpcResponse;
+        try {
+            // 先重试
+            RetryStrategy retryStrategy = RetryStrategyFactory.getInstance(rpcConfig.getRetryStrategy());
+            rpcResponse = retryStrategy.doRetry(() -> VertxTcpClient.doRequest(rpcRequest, selectedServiceMetaInfo));
+        } catch (Exception e){
+            // 重试仍然失败，再执行容错
+            TolerantStrategy tolerantStrategy = TolerantStrategyFactory.getInstance(rpcConfig.getTolerantStrategy());
+            // 构造上下文，包括从注册中心获取的服务节点列表，当前要请求的服务节点（通过负载均衡算法选择的），当前的RPC请求
+            Map<String, Object> context = new HashMap<>();
+            context.put(TolerantStrategyConstant.SERVICE_LIST, serviceMetaInfoList);
+            context.put(TolerantStrategyConstant.CURRENT_SERVICE, selectedServiceMetaInfo);
+            context.put(TolerantStrategyConstant.RPC_REQUEST, rpcRequest);
+            rpcResponse = tolerantStrategy.doTolerant(context, e);
+        }
+
+        return rpcResponse.getData();
 
     }
 }

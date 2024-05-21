@@ -3,6 +3,8 @@ package com.rpc.example.spi;
 import cn.hutool.core.io.resource.ResourceUtil;
 import com.rpc.example.fault.retry.FixedIntervalRetryStrategy;
 import com.rpc.example.fault.retry.RetryStrategy;
+import com.rpc.example.fault.tolerant.FailOverTolerantStrategy;
+import com.rpc.example.fault.tolerant.TolerantStrategy;
 import com.rpc.example.loadbalancer.LoadBalancer;
 import com.rpc.example.loadbalancer.RoundRobinLoadBalancer;
 import com.rpc.example.registry.Registry;
@@ -55,7 +57,8 @@ public class SpiLoader {
     /**
      * 动态加载的类列表
      */
-    private static final List<Class<?>> LOAD_CLASS_LIST = Arrays.asList(Serializer.class, Registry.class, LoadBalancer.class, RetryStrategy.class);
+    private static final List<Class<?>> LOAD_CLASS_LIST = Arrays.asList(
+            Serializer.class, Registry.class, LoadBalancer.class, RetryStrategy.class, TolerantStrategy.class);
 
     /**
      * 加载所有类型
@@ -146,6 +149,8 @@ public class SpiLoader {
         System.out.println(roundRobinLoadBalancer);
         FixedIntervalRetryStrategy fixedIntervalRetryStrategy = getInstance(RetryStrategy.class, "fixedInterval");
         System.out.println(fixedIntervalRetryStrategy);
+        FailOverTolerantStrategy failOver = getInstance(TolerantStrategy.class, "failOver");
+        System.out.println(failOver);
         System.out.println("INSTANCE_CACHE: " + INSTANCE_CACHE);
     }
 
