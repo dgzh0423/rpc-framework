@@ -9,4 +9,8 @@ public interface RetryStrategyKeys {
     String NO = "no";
 
     String FIXED_INTERVAL = "fixedInterval";
+
+    String LINEAR = "linear";
+
+    String EXPONENTIAL = "exponential";
 }

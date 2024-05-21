@@ -1,2 +1,4 @@
 no=com.rpc.example.fault.retry.NoRetryStrategy
 fixedInterval=com.rpc.example.fault.retry.FixedIntervalRetryStrategy
+linear=com.rpc.example.fault.retry.LinearRetryStrategy
+exponential=com.rpc.example.fault.retry.ExponentialRetryStrategy

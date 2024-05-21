@@ -8,14 +8,11 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author 15304
- */
 @Slf4j
-public class FixedIntervalRetryStrategy implements RetryStrategy{
+public class LinearRetryStrategy implements RetryStrategy{
 
     /**
-     * 固定时间间隔（3s）重试, 重试3次
+     * 指定初始等待值1s，然后重试间隔随次数等差递增(1s)
      * @param callable
      * @return
      * @throws ExecutionException
@@ -26,7 +23,7 @@ public class FixedIntervalRetryStrategy implements RetryStrategy{
         Retryer<RpcResponse> retryer = RetryerBuilder.<RpcResponse>newBuilder()
                 .retryIfExceptionOfType(Exception.class)
                 .retryIfResult(result -> result.getException() != null)
-                .withWaitStrategy(WaitStrategies.fixedWait(3000, TimeUnit.MILLISECONDS))
+                .withWaitStrategy(WaitStrategies.incrementingWait(1000, TimeUnit.MILLISECONDS,1000, TimeUnit.MILLISECONDS))
                 .withStopStrategy(StopStrategies.stopAfterAttempt(3))
                 .withRetryListener(new RetryListener() {
                     @Override

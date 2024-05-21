@@ -12,10 +12,10 @@ import java.util.concurrent.TimeUnit;
  * @author 15304
  */
 @Slf4j
-public class FixedIntervalRetryStrategy implements RetryStrategy{
+public class ExponentialRetryStrategy implements RetryStrategy{
 
     /**
-     * 固定时间间隔（3s）重试, 重试3次
+     * 默认初始值1s，然后每次重试间隔乘2（即间隔为2的幂次方）
      * @param callable
      * @return
      * @throws ExecutionException
@@ -26,8 +26,8 @@ public class FixedIntervalRetryStrategy implements RetryStrategy{
         Retryer<RpcResponse> retryer = RetryerBuilder.<RpcResponse>newBuilder()
                 .retryIfExceptionOfType(Exception.class)
                 .retryIfResult(result -> result.getException() != null)
-                .withWaitStrategy(WaitStrategies.fixedWait(3000, TimeUnit.MILLISECONDS))
-                .withStopStrategy(StopStrategies.stopAfterAttempt(3))
+                .withWaitStrategy(WaitStrategies.exponentialWait(2, 1, TimeUnit.SECONDS))
+                .withStopStrategy(StopStrategies.stopAfterAttempt(5))
                 .withRetryListener(new RetryListener() {
                     @Override
                     public <V> void onRetry(Attempt<V> attempt) {

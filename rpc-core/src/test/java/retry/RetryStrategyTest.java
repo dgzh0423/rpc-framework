@@ -1,7 +1,7 @@
 package retry;
 
 
-import com.rpc.example.fault.retry.FixedIntervalRetryStrategy;
+import com.rpc.example.fault.retry.ExponentialRetryStrategy;
 import com.rpc.example.fault.retry.RetryStrategy;
 import com.rpc.example.model.RpcResponse;
 import org.junit.Test;
@@ -11,7 +11,7 @@ import org.junit.Test;
  */
 public class RetryStrategyTest {
 
-    RetryStrategy retryStrategy = new FixedIntervalRetryStrategy();
+    RetryStrategy retryStrategy = new ExponentialRetryStrategy();
 
     @Test
     public void doRetry() {
