@@ -1,5 +1,6 @@
 package com.rpc.example.consumer;
 
+import com.rpc.example.bootstrap.ConsumerBootstrap;
 import com.rpc.example.common.model.User;
 import com.rpc.example.common.service.UserService;
 import com.rpc.example.proxy.ServiceProxyFactory;
@@ -11,9 +12,8 @@ import com.rpc.example.proxy.ServiceProxyFactory;
 public class ConsumerExample {
 
     public static void main(String[] args) {
-        // 读取 application.properties中以rpc为前缀的配置项
-        //RpcConfig config = ConfigUtils.loadConfig(RpcConfig.class, "rpc");
-        //System.out.println(config);
+        // 消费方初始化
+        ConsumerBootstrap.init();
 
         // 生成代理对象
         UserService userService = ServiceProxyFactory.getProxy(UserService.class);
