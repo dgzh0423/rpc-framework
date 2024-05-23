@@ -1,0 +1,16 @@
+package com.rpc.rpcspringbootstarter;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+/**
+ * @author 15304
+ */
+@SpringBootApplication
+public class RpcSpringBootStarterApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(RpcSpringBootStarterApplication.class, args);
+    }
+
+}
