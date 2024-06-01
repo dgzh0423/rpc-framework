@@ -125,7 +125,7 @@ public class SpiLoader {
                         if (strArray.length > 1) {
                             String key = strArray[0];
                             String className = strArray[1];
-                            log.info("加载 {} SPI配置文件 key={} className={}", scanDir.equals(RPC_CUSTOM_SPI_DIR) ? "自定义" : "系统", key, className);
+                            //log.info("加载 {} SPI配置文件 key={} className={}", scanDir.equals(RPC_CUSTOM_SPI_DIR) ? "自定义" : "系统", key, className);
                             keyClassMap.put(key, Class.forName(className));
                         }
                     }
