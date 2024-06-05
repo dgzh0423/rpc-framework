@@ -3,10 +3,12 @@ package com.rpc.examplespringbootconsumer.consumer;
 import com.rpc.example.common.model.User;
 import com.rpc.example.common.service.UserService;
 import com.rpc.rpcspringbootstarter.annotation.RpcReference;
+import org.springframework.stereotype.Service;
 
 /**
  * @author 15304
  */
+@Service
 public class ExampleServiceConsumer {
 
     /**
@@ -14,10 +16,6 @@ public class ExampleServiceConsumer {
      */
     @RpcReference
     private UserService userService;
-
-    public ExampleServiceConsumer(UserService userService) {
-        this.userService = userService;
-    }
 
     /**
      * 测试方法
