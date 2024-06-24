@@ -73,10 +73,10 @@ public class SpiLoader {
     /**
      * 获取某个接口的实例
      *
-     * @param tClass
-     * @param key
-     * @param <T>
-     * @return
+     * @param tClass 接口类，如：Serializer.class/Registry.class...
+     * @param key 实现类的 key，如：protobuf/zookeeper
+     * @param <T> 泛型
+     * @return 实例对象
      */
     @SuppressWarnings("unchecked")
     public static <T> T getInstance(Class<?> tClass, String key) {
@@ -106,7 +106,7 @@ public class SpiLoader {
     /**
      * 加载某个类型
      *
-     * @param loadClass
+     * @param loadClass 要加载的接口类型 如：Serializer.class/Registry.class...，将其在扫描路径下定义的实现类加载到 LOADER_MAP 中
      */
     public static Map<String, Class<?>> load(Class<?> loadClass) {
         log.info("加载类型为 {} 的 SPI", loadClass.getName());

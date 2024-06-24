@@ -9,23 +9,28 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 
 /**
- * HTTP 请求处理
+ * HTTP 请求处理器
  * @author 15304
  */
+@Slf4j
 public class HttpServerHandler implements Handler<HttpServerRequest> {
 
+    /**
+     * @param request 处理接收到的请求，该请求体中有我们自定义的 rpcRequest
+     */
     @Override
     public void handle(HttpServerRequest request) {
-        // 指定序列化器
+        // 指定序列化器JDK
         final Serializer serializer = new JdkSerializer();
 
         // 记录日志
-        System.out.println("Received request: " + request.method() + " " + request.uri());
+        log.info("Received request: {} {}", request.method(), request.uri());
 
         // 异步处理 HTTP 请求
         request.bodyHandler(body -> {
@@ -35,7 +40,7 @@ public class HttpServerHandler implements Handler<HttpServerRequest> {
                 // 反序列化请求为封装的rpcRequest对象
                 rpcRequest = serializer.deserialize(bytes, RpcRequest.class);
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("deserialize request error: ", e);
             }
 
             // 构造响应结果对象
@@ -57,7 +62,7 @@ public class HttpServerHandler implements Handler<HttpServerRequest> {
                 rpcResponse.setDataType(method.getReturnType());
                 rpcResponse.setMessage("ok");
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("invoke service error: ", e);
                 rpcResponse.setMessage(e.getMessage());
                 rpcResponse.setException(e);
             }
@@ -68,7 +73,6 @@ public class HttpServerHandler implements Handler<HttpServerRequest> {
 
     /**
      * 响应
-     *
      * @param request 请求
      * @param rpcResponse 封装的返回
      * @param serializer 指定的序列化器
@@ -81,7 +85,7 @@ public class HttpServerHandler implements Handler<HttpServerRequest> {
             byte[] serialized = serializer.serialize(rpcResponse);
             httpServerResponse.end(Buffer.buffer(serialized));
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("serialize response error: ", e);
             httpServerResponse.end(Buffer.buffer());
         }
     }

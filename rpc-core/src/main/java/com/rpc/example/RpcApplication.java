@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * RPC 框架应用
- * 相当于 holder，存放了项目全局用到的变量。双检锁单例模式实现
+ * 相当于 holder，存放了项目全局用到的配置信息--双检锁单例模式实现
  * @author 15304
  */
 @Slf4j
