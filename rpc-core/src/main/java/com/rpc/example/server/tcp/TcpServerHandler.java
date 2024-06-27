@@ -55,7 +55,7 @@ public class TcpServerHandler implements Handler<NetSocket> {
                 rpcResponse.setException(e);
                 // todo 返回不正常
             }
-
+            // todo 记录响应日志
             // 发送响应，编码
             header.setType((byte) ProtocolMessageTypeEnum.RESPONSE.getKey());
             header.setStatus((byte) ProtocolMessageStatusEnum.OK.getValue());
