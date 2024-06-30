@@ -39,12 +39,12 @@ public class EtcdRegistry implements Registry{
     private final Set<String> localRegisterNodeKeySet = new HashSet<>();
 
     /**
-     * 消费端保存注册中心服务缓存
+     * 消费端保存注册中心服务缓存，支持多个服务（不同的serviceKey）缓存 --- CaffeineCache
      */
-    private final RegistryServiceCache registryServiceCache = new RegistryServiceCache();
+    private final CaffeineCache registryServiceCache = new CaffeineCache();
 
     /**
-     * 消费端正在监听的 key 集合
+     * 消费端正在监听的 key 集合, 用于监听服务信息是否有变化
      */
     private final Set<String> watchingKeySet = new ConcurrentHashSet<>();
 
@@ -64,6 +64,8 @@ public class EtcdRegistry implements Registry{
         kvClient = client.getKVClient();
         //开启心跳检测
         heartBeat();
+        // 初始化缓存
+        registryServiceCache.init();
     }
 
     @Override
@@ -98,9 +100,12 @@ public class EtcdRegistry implements Registry{
 
     @Override
     public List<ServiceMetaInfo> serviceDiscovery(String serviceKey) {
-        // 消费端优先从缓存获取服务
-        List<ServiceMetaInfo> cachedServiceMetaInfoList = registryServiceCache.readCache();
-        if (cachedServiceMetaInfoList != null) {
+        if(serviceKey == null || serviceKey.isEmpty()){
+            throw new RuntimeException("服务名为空，服务发现失败");
+        }
+        // 消费端优先从缓存获取服务，如果缓存不存在，则返回一个空list
+        List<ServiceMetaInfo> cachedServiceMetaInfoList = registryServiceCache.readCache(serviceKey);
+        if (!cachedServiceMetaInfoList.isEmpty()) {
             return cachedServiceMetaInfoList;
         }
 
@@ -118,6 +123,7 @@ public class EtcdRegistry implements Registry{
             // 解析服务信息
             List<ServiceMetaInfo> serviceMetaInfoList = keyValues.stream()
                     .map(keyValue -> {
+                        // key: /rpc/com.rpc.example.common.service.UserService:1.0/localhost:8081
                         String key = keyValue.getKey().toString(StandardCharsets.UTF_8);
                         // 监听 key 的变化
                         watch(key);
@@ -126,7 +132,7 @@ public class EtcdRegistry implements Registry{
                     })
                     .collect(Collectors.toList());
             // 写入服务缓存
-            registryServiceCache.writeCache(serviceMetaInfoList);
+            registryServiceCache.writeCache(serviceKey, serviceMetaInfoList);
             return serviceMetaInfoList;
         } catch (Exception e) {
             throw new RuntimeException("获取服务列表失败", e);
@@ -166,7 +172,7 @@ public class EtcdRegistry implements Registry{
     @Override
     public void watch(String serviceNodeKey) {
         Watch watchClient = client.getWatchClient();
-        // 之前未被监听，开启监听(只监听首次加入到watchingKeySet中的key)
+        // 之前未被监听，开启监听(只监听首次加入到watchingKeySet中的服务节点)
         boolean newWatch = watchingKeySet.add(serviceNodeKey);
         if (newWatch) {
             watchClient.watch(ByteSequence.from(serviceNodeKey, StandardCharsets.UTF_8), response -> {
@@ -174,8 +180,11 @@ public class EtcdRegistry implements Registry{
                     switch (event.getEventType()) {
                         // key 删除时触发
                         case DELETE:
+                            // 这里是硬编码获取 serviceKey
+                            String[] split = serviceNodeKey.split("/");
+                            String serviceKey = split[2];
                             // 清理注册服务缓存
-                            registryServiceCache.clearCache();
+                            registryServiceCache.clearCache(serviceKey);
                             break;
                         case PUT:
                             // 即使key被注册中心删除了再重新设置，之前的监听依然有效
@@ -200,8 +209,10 @@ public class EtcdRegistry implements Registry{
             }
         }
 
-        //清除服务端保存的注册信息
+        // 清除服务端保存的注册信息
         localRegisterNodeKeySet.clear();
+        // 清空消费端的服务缓存信息，由于监听机制的存在，当有节点下线时，消费端会自动删除缓存
+        registryServiceCache.clearAll();
 
         // 释放资源
         if (kvClient != null) {

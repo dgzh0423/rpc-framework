@@ -5,7 +5,7 @@ import com.rpc.example.model.ServiceMetaInfo;
 import java.util.List;
 
 /**
- * 注册中心服务本地缓存
+ * 注册中心服务本地缓存，只支持保存一个服务缓存
  * @author 15304
  */
 public class RegistryServiceCache {
